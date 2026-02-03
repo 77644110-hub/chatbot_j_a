@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot MiNegocio - Asistente Virtual</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .chat-container {
+            width: 90%;
+            max-width: 450px;
+            height: 80vh;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .chat-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .chat-header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 16px;
+            display: flex;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.bot {
+            justify-content: flex-start;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 75%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            position: relative;
+        }
+
+        .message.bot .message-content {
+            background: #fff;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 1px solid #e9ecef;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .error-message {
+            background: #fee;
+            border-left: 4px solid #f66;
+            color: #c33;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            padding: 12px 16px;
+            background: #fff;
+            border-radius: 18px;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 1px solid #e9ecef;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #25D366;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        .chat-input {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        #messageInput {
+            flex: 1;
+            padding: 12px 20px;
+            border: 1px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 15px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        #messageInput:focus {
+            border-color: #25D366;
+            box-shadow: 0 0 0 3px rgba(37, 211, 102, 0.1);
+        }
+
+        #sendButton {
+            width: 50px;
+            height: 50px;
+            border: none;
+            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        #sendButton:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(37, 211, 102, 0.4);
+        }
+
+        #sendButton:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        @media (max-width: 480px) {
+            .chat-container {
+                width: 95%;
+                height: 90vh;
+                border-radius: 15px;
+            }
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 2px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>🤖 Asistente MiNegocio</h2>
+            <p>¡Estoy aquí para ayudarte! 👋</p>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot">
+                <div class="message-content">
+                    <span class="emoji">👋</span>¡Bienvenido a MiNegocio! Soy tu asistente virtual. 
+                    <br><br>✅ Puedo ayudarte con horarios, productos, servicios 📦
+                    <br>❌ Actualmente la IA está en mantenimiento. Usa respuestas inteligentes predefinidas 😊
+                </div>
+            </div>
+        </div>
+
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+
+        <div class="chat-input">
+            <div class="input-container">
+                <input 
+                    type="text" 
+                    id="messageInput" 
+                    placeholder="Escribe tu mensaje aquí..." 
+                    maxlength="500"
+                >
+                <button id="sendButton" title="Enviar mensaje">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class MiNegocioChatbot {
+            constructor() {
+                // MÚLTIPLES API KEYS (usa la tuya y agrega más si tienes)
+                this.apiKeys = [
+                    'AIzaSyBEXbZvx9wRV0p7VErmCBiNDJbbqhqIE38', // Tu key principal
+                    // Agrega más keys aquí: 'AIzaSy...', 'AIzaSy...'
+                ];
+                this.currentKeyIndex = 0;
+                this.apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
+                this.chatMessages = document.getElementById('chatMessages');
+                this.messageInput = document.getElementById('messageInput');
+                this.sendButton = document.getElementById('sendButton');
+                this.typingIndicator = document.getElementById('typingIndicator');
+                this.retryCount = 0;
+                this.maxRetries = 3;
+                
+                this.responses = {
+                    saludo: "✅ ¡Hola! Bienvenido a MiNegocio 📦 Soy tu asistente virtual disponible 24/7. ¿En qué puedo ayudarte hoy? 😊",
+                    productos: "📦 Ofrecemos productos de alta calidad. Nuestros más populares son: • Producto estrella 1 • Producto estrella 2 • Producto estrella 3 ¿Te interesa alguno en particular? 🤔",
+                    horarios: "🕒 Nuestros horarios son: Lunes a Viernes: 9:00 AM - 7:00 PM Sábados: 10:00 AM - 5:00 PM Domingos: Cerrado ¿Necesitas coordinar una cita? 📅",
+                    contacto: "📞 Contáctanos: WhatsApp: +51 999 999 999 Email: info@minegocio.com Sitio web: www.minegocio.com ¿En qué más puedo ayudarte? 😊",
+                    precios: "💰 Nuestros precios son competitivos. Te recomiendo visitar nuestro catálogo o contactar directamente para cotizaciones personalizadas. ¿Qué producto te interesa? 📋",
+                    ubicacion: "📍 Estamos ubicados en Lima, Perú. Dirección exacta disponible en nuestro sitio web. ¿Necesitas indicaciones? 🗺️"
+                };
+                
+                this.initializeEventListeners();
+                this.scrollToBottom();
+            }
+
+            initializeEventListeners() {
+                this.sendButton.addEventListener('click', () => this.sendMessage());
+                this.messageInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+                this.messageInput.addEventListener('input', () => {
+                    this.sendButton.disabled = this.messageInput.value.trim() === '';
+                });
+            }
+
+            async sendMessage() {
+                const message = this.messageInput.value.trim();
+                if (!message) return;
+
+                this.addMessage(message, 'user');
+                this.messageInput.value = '';
+                this.sendButton.disabled = true;
+                this.showTypingIndicator();
+
+                // Intentar API primero, fallback a respuestas predefinidas
+                try {
+                    const response = await this.getGeminiResponse(message);
+                    this.hideTypingIndicator();
+                    this.addMessage(response, 'bot');
+                } catch (error) {
+                    console.log('API falló, usando modo offline:', error);
+                    this.hideTypingIndicator();
+                    const offlineResponse = this.getSmartOfflineResponse(message);
+                    this.addMessage(offlineResponse, 'bot');
+                }
+
+                this.scrollToBottom();
+                this.retryCount = 0; // Reset retries
+            }
+
+            async getGeminiResponse(userMessage) {
+                const systemPrompt = `Eres el asistente virtual oficial de MiNegocio 📦. Responde FORMALMENTE usando EMOJIS profesionales (✅📞🕒📦💼). Estructura en párrafos cortos. Termina con "¿En qué más puedo ayudarte? 😊"`;
+
+                const requestBody = {
+                    contents: [{
+                        parts: [{
+                            text: `${systemPrompt}\n\nUsuario: ${userMessage}`
+                        }]
+                    }],
+                    generationConfig: {
+                        temperature: 0.3, // Menos aleatorio
+                        maxOutputTokens: 300,
+                    }
+                };
+
+                // Retry con backoff exponencial
+                let lastError;
+                for (let i = 0; i < this.maxRetries; i++) {
+                    try {
+                        const apiKey = this.apiKeys[this.currentKeyIndex];
+                        const response = await fetch(`${this.apiUrl}?key=${apiKey}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(requestBody)
+                        });
+
+                        if (response.status === 429) {
+                            // Rotar key o esperar
+                            this.currentKeyIndex = (this.currentKeyIndex + 1) % this.apiKeys.length;
+                            if (i < this.maxRetries - 1) {
+                                const delay = Math.pow(2, i) * 1000; // 1s, 2s, 4s
+                                await new Promise(resolve => setTimeout(resolve, delay));
+                                continue;
+                            }
+                        }
+
+                        if (!response.ok) {
+                            lastError = new Error(`API Error: ${response.status}`);
+                            throw lastError;
+                        }
+
+                        const data = await response.json();
+                        return data.candidates[0].content.parts[0].text
+                            .replace(/\*\*(.*?)\*\*/g, '$1')
+                            .replace(/\*(.*?)\*/g, '$1')
+                            .replace(/\\n/g, '\n');
+                    } catch (error) {
+                        lastError = error;
+                        if (i === this.maxRetries - 1) throw lastError;
+                    }
+                }
+            }
+
+            getSmartOfflineResponse(message) {
+                const msg = message.toLowerCase();
+                
+                if (msg.includes('hola') || msg.includes('buen')) {
+                    return this.responses.saludo;
+                } else if (msg.includes('producto') || msg.includes('qué vend') || msg.includes('tienen')) {
+                    return this.responses.productos;
+                } else if (msg.includes('hora') || msg.includes('abren') || msg.includes('cierra')) {
+                    return this.responses.horarios;
+                } else if (msg.includes('teléfono') || msg.includes('whatsapp') || msg.includes('contact')) {
+                    return this.responses.contacto;
+                } else if (msg.includes('precio') || msg.includes('cuesta') || msg.includes('costo')) {
+                    return this.responses.precios;
+                } else if (msg.includes('dónde') || msg.includes('ubicación') || msg.includes('dirección')) {
+                    return this.responses.ubicacion;
+                } else {
+                    return `✅ Gracias por tu mensaje. Mi sistema de IA está en mantenimiento temporal por alta demanda. 😊
+
+📞 Te recomiendo contactar directamente al WhatsApp oficial para atención inmediata.
+💼 Mis respuestas automáticas están disponibles para consultas básicas.
+
+¿En qué más puedo ayudarte con información general? 😊`;
+                }
+            }
+
+            addMessage(text, sender, isError = false) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}`;
+
+                const contentDiv = document.createElement('div');
+                contentDiv.className = `message-content ${isError ? 'error-message' : ''}`;
+                contentDiv.textContent = text;
+
+                messageDiv.appendChild(contentDiv);
+                this.chatMessages.appendChild(messageDiv);
+            }
+
+            showTypingIndicator() {
+                this.typingIndicator.style.display = 'flex';
+                this.scrollToBottom();
+            }
+
+            hideTypingIndicator() {
+                this.typingIndicator.style.display = 'none';
+            }
+
+            scrollToBottom() {
+                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new MiNegocioChatbot();
+        });
+    </script>
+</body>
+</html>
